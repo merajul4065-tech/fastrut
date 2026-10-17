@@ -1,0 +1,53 @@
+name: Build Flutter APK
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch: # Isse aap phone browser se button click karke bhi manually build trigger kar sakte hain
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Repo ka code runner me checkout karein
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # Step 2: Java / JDK setup karein (Gradle ke liye)
+      - name: Set up Java JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+          cache: 'gradle'
+
+      # Step 3: Flutter environment install karein
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      # Step 4: Dependencies fetch karein
+      # Agar aapka flutter code repo ke root me hai to niche 'cd mobile_app' hata dein,
+      # ya working-directory set karein
+      - name: Install Dependencies
+        run: |
+          cd mobile_app
+          flutter pub get
+
+      # Step 5: Android APK compile karein (Fat APK for all architectures)
+      - name: Build APK (Release)
+        run: |
+          cd mobile_app
+          flutter build apk --release --no-shrink
+
+      # Step 6: Generated APK ko download link me convert karein
+      - name: Upload APK as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: DelhiNCR-Delivery-Release-APK
+          path: mobile_app/build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 7
